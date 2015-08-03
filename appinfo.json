@@ -1,80 +1,30 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "KEY_ANGLE": 1,
+        "KEY_BIKENAME": 0
+    },
     "capabilities": [
-        ""
+        "location"
     ],
     "companyName": "chrisberry4545@googlemail.com",
-    "longName": "test6",
-    "projectType": "pebblejs",
+    "longName": "CompassTest",
+    "projectType": "native",
     "resources": {
         "media": [
             {
-                "file": "images/menu_icon.png",
-                "menuIcon": true,
-                "name": "IMAGE_MENU_ICON",
-                "type": "png"
-            },
-            {
-                "file": "images/logo_splash.png",
-                "name": "IMAGE_LOGO_SPLASH",
-                "type": "png"
-            },
-            {
-                "file": "images/tile_splash.png",
-                "name": "IMAGE_TILE_SPLASH",
-                "type": "png"
-            },
-            {
-                "file": "fonts/UbuntuMono-Regular.ttf",
-                "name": "MONO_FONT_14",
-                "type": "font"
-            },
-            {
-                "file": "images/arrowWest.png",
-                "name": "IMAGES_ARROWWEST_PNG",
-                "type": "png"
-            },
-            {
-                "file": "images/arrowSouthWest.png",
-                "name": "IMAGES_ARROWSOUTHWEST_PNG",
-                "type": "png"
-            },
-            {
-                "file": "images/arrowSouthEast.png",
-                "name": "IMAGES_ARROWSOUTHEAST_PNG",
-                "type": "png"
-            },
-            {
-                "file": "images/arrowSouth.png",
-                "name": "IMAGES_ARROWSOUTH_PNG",
-                "type": "png"
-            },
-            {
-                "file": "images/arrowNorthWest.png",
-                "name": "IMAGES_ARROWNORTHWEST_PNG",
-                "type": "png"
-            },
-            {
-                "file": "images/arrowNorthEast.png",
-                "name": "IMAGES_ARROWNORTHEAST_PNG",
-                "type": "png"
-            },
-            {
-                "file": "images/arrowNorth.png",
-                "name": "IMAGES_ARROWNORTH_PNG",
-                "type": "png"
-            },
-            {
-                "file": "images/arrowEast.png",
-                "name": "IMAGES_ARROWEAST_PNG",
+                "file": "images/compass_background.png",
+                "name": "RESOURCE_ID_COMPASS_BACKGROUND",
                 "type": "png"
             }
         ]
     },
     "sdkVersion": "3",
-    "shortName": "test6",
-    "uuid": "3ae4c01e-9333-4bf2-acd9-e31ed3765ac4",
-    "versionCode": 1,
+    "shortName": "CompassTest",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "59c6e1fc-1276-4e47-a9c6-0cd9074f553c",
     "versionLabel": "1.0",
     "watchapp": {
         "watchface": false
