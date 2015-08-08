@@ -10,13 +10,7 @@
     "longName": "CompassTest",
     "projectType": "native",
     "resources": {
-        "media": [
-            {
-                "file": "images/compass_background.png",
-                "name": "RESOURCE_ID_COMPASS_BACKGROUND",
-                "type": "png"
-            }
-        ]
+        "media": []
     },
     "sdkVersion": "3",
     "shortName": "CompassTest",

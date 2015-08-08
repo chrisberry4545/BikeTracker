@@ -15,7 +15,7 @@ function getMyLocation(callback) {
 
     navigator.geolocation.getCurrentPosition(success, error, options);
 }
-function constructUrl(lat, lng, angle) {
+function constructUrl(lat, lng) {
     return 'http://chrisbdev.com/api/location/GetAngleToNearestPoint?lat=' + lat + '&lng=' + lng + '&facingAngle=0';
 }
 
@@ -28,8 +28,8 @@ var xhrRequest = function (url, type, callback) {
   xhr.send();
 };
 
-function getNearestBikePointInfo(lat, lng, facingAngle, callback) {
-    var url = constructUrl(lat, lng, facingAngle);
+function getNearestBikePointInfo(lat, lng, callback) {
+    var url = constructUrl(lat, lng);
     console.log('gettin data from ' + url);
       xhrRequest(
           url,
@@ -43,11 +43,10 @@ function getNearestBikePointInfo(lat, lng, facingAngle, callback) {
 
 
 
-function getLocationDataForUserAndBike(facingAngle) {
+function getLocationDataForUserAndBike() {
    getMyLocation(function(pos) {
      
-        getNearestBikePointInfo(pos.latitude, pos.longitude, facingAngle, function(bikeLocationData) {
-//        getNearestBikePointInfo(39.0437, -77.4875, facingAngle, function(bikeLocationData) {
+        getNearestBikePointInfo(pos.latitude, pos.longitude, function(bikeLocationData) {
           
           console.log('Got users pos, getting bike loc'); 
           
@@ -78,17 +77,6 @@ function getLocationDataForUserAndBike(facingAngle) {
 // Listen for when an AppMessage is received
 Pebble.addEventListener('appmessage',
   function(e) {
-    console.log('AppMessage received!');
-    console.log('payload -- ' + JSON.stringify(e.payload));
-    console.log('angle val-- ' + e.payload["0"]);
-    getLocationDataForUserAndBike(JSON.stringify(e.payload["0"]));
+    getLocationDataForUserAndBike();
   }                     
 );
-
-// Listen for when the watchface is opened
-// Pebble.addEventListener('ready', 
-//   function(e) {
-//     console.log('PebbleKit JS ready!');
-//     getLocationDataForUserAndBike(JSON.stringify(e.payload));
-//   }
-// );

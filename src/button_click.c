@@ -1,9 +1,5 @@
 /*
- * This application shows how to use the Compass API to build a simple watchface
- * that shows where magnetic north is.
- *
- * The compass background image source is:
- *    <http://opengameart.org/content/north-and-southalpha-chanel>
+ * Application which points you towards the nearest London Santander Bike Terminal.
  */
 
 #include "pebble.h"
@@ -27,19 +23,7 @@ static GPath *s_main_arrow;
 static int angle;
 
 static void compass_heading_handler(CompassHeadingData heading_data) {
-  // rotate needle accordingly
-
   APP_LOG(APP_LOG_LEVEL_INFO, "Current magnetic degress:");
-  // display heading in degrees and radians
-  static char s_heading_buf[64];
-  snprintf(s_heading_buf, sizeof(s_heading_buf),
-    " %ld°\n%ld.%02ldpi",
-    TRIGANGLE_TO_DEG(heading_data.magnetic_heading),
-    // display radians, units digit
-    (TRIGANGLE_TO_DEG(heading_data.magnetic_heading) * 2) / 360,
-    // radians, digits after decimal
-    ((TRIGANGLE_TO_DEG(heading_data.magnetic_heading) * 200) / 360) % 100
-  );
   
   int degrees = TRIGANGLE_TO_DEG(heading_data.magnetic_heading);
   
@@ -105,7 +89,6 @@ static void main_window_load(Window *window) {
 
   // Create the bitmap for the background and put it on the screen
   s_bitmap_layer = bitmap_layer_create(bounds);
-//   s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_COMPASS_BACKGROUND);
   bitmap_layer_set_bitmap(s_bitmap_layer, s_background_bitmap);
   
   // Make needle background 'transparent' with GCompOpAnd
@@ -168,8 +151,6 @@ static void update_time() {
 
   // Create a long-lived buffer
   static char buffer[] = "00:00";
-
-    APP_LOG(APP_LOG_LEVEL_INFO, "Updating Time");
   // Write the current hours and minutes into the buffer
   if(clock_is_24h_style() == true) {
     //Use 2h hour format
@@ -195,63 +176,12 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     // Add a key-value pair
     dict_write_uint16(iter, 0, 0);
 
-    text_layer_set_text(s_location_name, "Updating nearest point...");
+    text_layer_set_text(s_location_name, "Updating info...");
     // Send the message!
     APP_LOG(APP_LOG_LEVEL_INFO, "%d sending message!", (int)0);
     app_message_outbox_send();
   }
 }
-
-static double to_degrees(double radians) {
-    return radians * (180.0 / 3.14159);
-}
-
-static bool is_c_digit (char c) {
-    if ((c>='0') && (c<='9')) return true;
-    return false;
-}
-
-static double to_dbl(char *s)
-{
-        double a = 0.0;
-        int e = 0;
-        int c;
-        while ((c = *s++) != '\0' && is_c_digit(c)) {
-                a = a*10.0 + (c - '0');
-        }
-        if (c == '.') {
-                while ((c = *s++) != '\0' && is_c_digit(c)) {
-                        a = a*10.0 + (c - '0');
-                        e = e-1;
-                }
-        }
-        if (c == 'e' || c == 'E') {
-                int sign = 1;
-                int i = 0;
-                c = *s++;
-                if (c == '+')
-                        c = *s++;
-                else if (c == '-') {
-                        c = *s++;
-                        sign = -1;
-                }
-                while (is_c_digit(c)) {
-                        i = i*10 + (c - '0');
-                        c = *s++;
-                }
-                e += i*sign;
-        }
-        while (e > 0) {
-                a *= 10.0;
-                e--;
-        }
-        while (e < 0) {
-                a *= 0.1;
-                e++;
-        }
-        return a;
-}
-
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   
@@ -259,8 +189,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   
   // Store incoming information
   static char bikename_buffer[120];
-  static char angle_buffer[32];
-  
   
   // Read first item
   Tuple *t = dict_read_first(iterator);
@@ -275,7 +203,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       break;
     case KEY_ANGLE:
       APP_LOG(APP_LOG_LEVEL_INFO, "Angle to loc: %d", (int)t->value->int32);
-      snprintf(angle_buffer, sizeof(angle_buffer), "%d", (int)t->value->int32);
       angle = (int)t->value->int32;
       break;
         
@@ -289,7 +216,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   }
   
   if (strcmp (bikename_buffer,"ERROR") != 0) {
-  text_layer_set_text(s_location_name, bikename_buffer);
+    text_layer_set_text(s_location_name, bikename_buffer);
   } else {
     text_layer_set_text(s_location_name, "Error connecting to internet");
   }
