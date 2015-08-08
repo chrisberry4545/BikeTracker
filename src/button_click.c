@@ -160,26 +160,28 @@ static void update_time() {
     strftime(buffer, sizeof("00:00"), "%I:%M", tick_time);
   }
 
-  // Display this time on the TextLayer
    text_layer_set_text(s_time_display, buffer);
 }
 
-static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-   update_time();
-  
-  // Update every 15 seconds
-  if(tick_time->tm_sec % 15 == 0) {
-    // Begin dictionary
+static void updateLocationData() {
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
-
-    // Add a key-value pair
     dict_write_uint16(iter, 0, 0);
 
     text_layer_set_text(s_location_name, "Updating info...");
-    // Send the message!
-    APP_LOG(APP_LOG_LEVEL_INFO, "%d sending message!", (int)0);
     app_message_outbox_send();
+}
+  
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  
+  if (tick_time->tm_sec % 60) {
+   update_time(); 
+  }
+   
+  
+  // Update every 15 seconds
+  if(tick_time->tm_sec % 15 == 0) {
+    updateLocationData();
   }
 }
 
@@ -187,15 +189,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   
   APP_LOG(APP_LOG_LEVEL_INFO, "%d got message back.", (int)0);
   
-  // Store incoming information
   static char bikename_buffer[120];
   
   // Read first item
   Tuple *t = dict_read_first(iterator);
 
-  // For all items
   while(t != NULL) {
-    // Which key was received?
     switch(t->key) {
     case KEY_BIKENAME:
       APP_LOG(APP_LOG_LEVEL_INFO, "Nearest loc found: %s",  t->value->cstring);
@@ -233,6 +232,14 @@ static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
 }
 
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  updateLocationData();
+}
+
+static void click_config_provider() {
+  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+}
+
 static void init() {
   angle = 0;
   
@@ -248,7 +255,7 @@ static void init() {
   window_stack_push(s_main_window, true);
   
   // Register with TickTimerService
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   
   // Register callbacks
   app_message_register_inbox_received(inbox_received_callback);
@@ -258,9 +265,15 @@ static void init() {
   
   // Open AppMessage
   app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  
+  window_set_click_config_provider(s_main_window, click_config_provider);
+  
+  updateLocationData();
 }
 
 static void deinit() {
+  app_message_deregister_callbacks();
+  tick_timer_service_unsubscribe();
   compass_service_unsubscribe();
   window_destroy(s_main_window);
 }
