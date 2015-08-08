@@ -11,23 +11,18 @@
 #define KEY_BIKENAME 0
 #define KEY_ANGLE 1
 
-// Vector paths for the compass needles
-static const GPathInfo NEEDLE_NORTH_POINTS = { 
-  3,
-  (GPoint[]) { { -8, 0 }, { 8, 0 }, { 0, -36 } }
-};
-static const GPathInfo NEEDLE_SOUTH_POINTS = { 
-  3,
-  (GPoint[]) { { 8, 0 }, { 0, 36 }, { -8, 0 } }
+static const GPathInfo MAIN_ARROW_POINTS = { 
+  7,
+  (GPoint[]) { { -12, 15 }, { 0, -25 }, { 12, 15 }, { 6, 15 }, { 6, 25 }, { -6, 25 }, { -6, 15 } }
 };
 
 static Window *s_main_window;
 static BitmapLayer *s_bitmap_layer;
 static GBitmap *s_background_bitmap;
 static Layer *s_path_layer;
-static TextLayer *s_heading_layer, *s_text_layer_calib_state, *s_text_test, *s_text_testb;
+static TextLayer *s_location_name, *s_text_layer_calib_state, *s_time_display, *s_refresh_hint;
 
-static GPath *s_needle_north, *s_needle_south;
+static GPath *s_main_arrow;
 
 static int angle;
 
@@ -47,26 +42,13 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
   );
   
   int degrees = TRIGANGLE_TO_DEG(heading_data.magnetic_heading);
-  static char testdegstr[64];
   
   int actualAngle = angle + degrees;
   APP_LOG(APP_LOG_LEVEL_INFO, "Actual angle: %d", actualAngle);
-  int second_angle = TRIG_MAX_ANGLE;//heading_data.magnetic_heading;
   int32_t adjustedAngle = ((double)actualAngle / 360) * TRIG_MAX_ANGLE;
-//   snprintf(testdegstr, sizeof(testdegstr), "adjusted angled %d", (int)adjustedAngle);
-  snprintf(testdegstr, sizeof(testdegstr), "adj ang %d", (int)adjustedAngle);
   
+  gpath_rotate_to(s_main_arrow, adjustedAngle);
   
-//   gpath_rotate_to(s_needle_north, heading_data.magnetic_heading);
-//   gpath_rotate_to(s_needle_south, heading_data.magnetic_heading);
-//   int sinAngle = sin_lookup(actualAngle);
-  gpath_rotate_to(s_needle_north, adjustedAngle);
-  gpath_rotate_to(s_needle_south, adjustedAngle);
-  
-  
-//   text_layer_set_text(s_heading_layer, s_heading_buf);
-  
-  text_layer_set_text(s_text_testb, testdegstr);
 
   // Modify alert layout depending on calibration state
   GRect bounds = layer_get_frame(window_get_root_layer(s_main_window)); 
@@ -98,7 +80,7 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
       snprintf(s_valid_buf, sizeof(s_valid_buf), "%s", "Fine tuning...");
       break;
     case CompassStatusCalibrated:
-      snprintf(s_valid_buf, sizeof(s_valid_buf), "%s", "Calibrated");
+      snprintf(s_valid_buf, sizeof(s_valid_buf), "%s", "");
       break;
   }
   text_layer_set_text(s_text_layer_calib_state, s_valid_buf);
@@ -109,22 +91,12 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
 
 static void path_layer_update_callback(Layer *path, GContext *ctx) {
 #ifdef PBL_COLOR
-  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_context_set_fill_color(ctx, GColorPurple);
 #endif
-  gpath_draw_filled(ctx, s_needle_north);       
+  gpath_draw_filled(ctx, s_main_arrow);       
 #ifndef PBL_COLOR
   graphics_context_set_fill_color(ctx, GColorBlack);
-#endif  
-  gpath_draw_outline(ctx, s_needle_south);                     
-
-  // creating centerpoint                 
-  GRect bounds = layer_get_frame(path);          
-  GPoint path_center = GPoint(bounds.size.w / 2, bounds.size.h / 2);  
-  graphics_fill_circle(ctx, path_center, 3);       
-
-  // then put a white circle on top               
-  graphics_context_set_fill_color(ctx, GColorWhite);
-  graphics_fill_circle(ctx, path_center, 2);                      
+#endif                                  
 }
 
 static void main_window_load(Window *window) {
@@ -148,19 +120,16 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, s_path_layer);
 
   // Initialize and define the two paths used to draw the needle to north and to south
-  s_needle_north = gpath_create(&NEEDLE_NORTH_POINTS);
-  s_needle_south = gpath_create(&NEEDLE_SOUTH_POINTS);
+  s_main_arrow = gpath_create(&MAIN_ARROW_POINTS);
 
   // Move the needles to the center of the screen.
   GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
-  gpath_move_to(s_needle_north, center);
-  gpath_move_to(s_needle_south, center);
+  gpath_move_to(s_main_arrow, center);
 
   // Place text layers onto screen: one for the heading and one for calibration status
-  s_heading_layer = text_layer_create(GRect(12, bounds.size.h * 3 / 4, bounds.size.w, bounds.size.h / 5));
-//   s_heading_layer = text_layer_create(GRect(12, bounds.size.h * 3 / 4, bounds.size.w / 4, bounds.size.h / 5));
-  text_layer_set_text(s_heading_layer, "No Data");
-  layer_add_child(window_layer, text_layer_get_layer(s_heading_layer));
+  s_location_name = text_layer_create(GRect(0, bounds.size.h * 3 / 4, bounds.size.w, bounds.size.h / 5));
+  text_layer_set_text(s_location_name, "No Data");
+  layer_add_child(window_layer, text_layer_get_layer(s_location_name));
 
   s_text_layer_calib_state = text_layer_create(GRect(0, 50, bounds.size.w, bounds.size.h / 7));
   text_layer_set_text_alignment(s_text_layer_calib_state, GTextAlignmentLeft);
@@ -168,26 +137,25 @@ static void main_window_load(Window *window) {
 
   layer_add_child(window_layer, text_layer_get_layer(s_text_layer_calib_state));
   
-  s_text_test = text_layer_create(GRect(0,0, bounds.size.w, bounds.size.h / 7));
-  text_layer_set_text_alignment(s_text_test, GTextAlignmentLeft);
-  text_layer_set_background_color(s_text_test, GColorClear);
-  text_layer_set_text(s_text_test, "CHRIS");
-  layer_add_child(window_layer, text_layer_get_layer(s_text_test));
+  s_time_display = text_layer_create(GRect(50,0, bounds.size.w, bounds.size.h / 7));
+  text_layer_set_text_alignment(s_time_display, GTextAlignmentLeft);
+  text_layer_set_background_color(s_time_display, GColorClear);
+  text_layer_set_font(s_time_display, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  layer_add_child(window_layer, text_layer_get_layer(s_time_display));
   
-  s_text_testb = text_layer_create(GRect(0,45, bounds.size.w, bounds.size.h / 7));
-  text_layer_set_text_alignment(s_text_testb, GTextAlignmentLeft);
-  text_layer_set_background_color(s_text_testb, GColorClear);
-  text_layer_set_text(s_text_testb, "CHRIS");
-  layer_add_child(window_layer, text_layer_get_layer(s_text_testb));
+  s_refresh_hint = text_layer_create(GRect(95,10, bounds.size.w, bounds.size.h / 7));
+  text_layer_set_text_alignment(s_refresh_hint, GTextAlignmentLeft);
+  text_layer_set_background_color(s_refresh_hint, GColorClear);
+  text_layer_set_text(s_refresh_hint, "Refresh");
+  layer_add_child(window_layer, text_layer_get_layer(s_refresh_hint));
 }
 
 static void main_window_unload(Window *window) {
-  text_layer_destroy(s_heading_layer);
+  text_layer_destroy(s_location_name);
   text_layer_destroy(s_text_layer_calib_state);
-  text_layer_destroy(s_text_test);
-  text_layer_destroy(s_text_testb);
-  gpath_destroy(s_needle_north);
-  gpath_destroy(s_needle_south);
+  text_layer_destroy(s_time_display);
+  text_layer_destroy(s_refresh_hint);
+  gpath_destroy(s_main_arrow);
   layer_destroy(s_path_layer);
   gbitmap_destroy(s_background_bitmap);
   bitmap_layer_destroy(s_bitmap_layer);
@@ -212,7 +180,7 @@ static void update_time() {
   }
 
   // Display this time on the TextLayer
-//   text_layer_set_text(s_heading_layer, buffer);
+   text_layer_set_text(s_time_display, buffer);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -227,7 +195,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     // Add a key-value pair
     dict_write_uint16(iter, 0, 0);
 
-    text_layer_set_text(s_text_test, "getting data...");
+    text_layer_set_text(s_location_name, "Updating nearest point...");
     // Send the message!
     APP_LOG(APP_LOG_LEVEL_INFO, "%d sending message!", (int)0);
     app_message_outbox_send();
@@ -321,11 +289,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   }
   
   if (strcmp (bikename_buffer,"ERROR") != 0) {
-  text_layer_set_text(s_text_test, bikename_buffer);
-  text_layer_set_text(s_heading_layer, angle_buffer);
-  text_layer_set_text(s_heading_layer, bikename_buffer);
+  text_layer_set_text(s_location_name, bikename_buffer);
   } else {
-    text_layer_set_text(s_text_test, "Error connecting to internet");
+    text_layer_set_text(s_location_name, "Error connecting to internet");
   }
 }
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
