@@ -49,7 +49,7 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
   int degrees = TRIGANGLE_TO_DEG(heading_data.magnetic_heading);
   static char testdegstr[64];
   
-  int actualAngle = angle - degrees;
+  int actualAngle = angle + degrees;
   APP_LOG(APP_LOG_LEVEL_INFO, "Actual angle: %d", actualAngle);
   int second_angle = TRIG_MAX_ANGLE;//heading_data.magnetic_heading;
   int32_t adjustedAngle = ((double)actualAngle / 360) * TRIG_MAX_ANGLE;
