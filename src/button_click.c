@@ -33,8 +33,6 @@ static int angle;
 
 static void compass_heading_handler(CompassHeadingData heading_data) {
   // rotate needle accordingly
-  gpath_rotate_to(s_needle_north, heading_data.magnetic_heading);
-  gpath_rotate_to(s_needle_south, heading_data.magnetic_heading);
 
   APP_LOG(APP_LOG_LEVEL_INFO, "Current magnetic degress:");
   // display heading in degrees and radians
@@ -53,9 +51,20 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
   
   int actualAngle = angle - degrees;
   APP_LOG(APP_LOG_LEVEL_INFO, "Actual angle: %d", actualAngle);
-  snprintf(testdegstr, sizeof(testdegstr), "%d", (int)actualAngle);
+  int second_angle = TRIG_MAX_ANGLE;//heading_data.magnetic_heading;
+  int32_t adjustedAngle = ((double)actualAngle / 360) * TRIG_MAX_ANGLE;
+//   snprintf(testdegstr, sizeof(testdegstr), "adjusted angled %d", (int)adjustedAngle);
+  snprintf(testdegstr, sizeof(testdegstr), "adj ang %d", (int)adjustedAngle);
   
-  text_layer_set_text(s_heading_layer, s_heading_buf);
+  
+//   gpath_rotate_to(s_needle_north, heading_data.magnetic_heading);
+//   gpath_rotate_to(s_needle_south, heading_data.magnetic_heading);
+//   int sinAngle = sin_lookup(actualAngle);
+  gpath_rotate_to(s_needle_north, adjustedAngle);
+  gpath_rotate_to(s_needle_south, adjustedAngle);
+  
+  
+//   text_layer_set_text(s_heading_layer, s_heading_buf);
   
   text_layer_set_text(s_text_testb, testdegstr);
 
@@ -71,7 +80,7 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
     text_layer_set_text_alignment(s_text_layer_calib_state, GTextAlignmentCenter);
   } else {
     // Show status at the top
-    alert_bounds = GRect(0, -3, bounds.size.w, bounds.size.h / 7);
+    alert_bounds = GRect(0, 25, bounds.size.w, bounds.size.h / 7);
     text_layer_set_background_color(s_text_layer_calib_state, GColorClear);
     text_layer_set_text_color(s_text_layer_calib_state, GColorBlack);
     text_layer_set_font(s_text_layer_calib_state, fonts_get_system_font(FONT_KEY_GOTHIC_18));
@@ -148,7 +157,8 @@ static void main_window_load(Window *window) {
   gpath_move_to(s_needle_south, center);
 
   // Place text layers onto screen: one for the heading and one for calibration status
-  s_heading_layer = text_layer_create(GRect(12, bounds.size.h * 3 / 4, bounds.size.w / 4, bounds.size.h / 5));
+  s_heading_layer = text_layer_create(GRect(12, bounds.size.h * 3 / 4, bounds.size.w, bounds.size.h / 5));
+//   s_heading_layer = text_layer_create(GRect(12, bounds.size.h * 3 / 4, bounds.size.w / 4, bounds.size.h / 5));
   text_layer_set_text(s_heading_layer, "No Data");
   layer_add_child(window_layer, text_layer_get_layer(s_heading_layer));
 
@@ -164,7 +174,7 @@ static void main_window_load(Window *window) {
   text_layer_set_text(s_text_test, "CHRIS");
   layer_add_child(window_layer, text_layer_get_layer(s_text_test));
   
-  s_text_testb = text_layer_create(GRect(25,25, bounds.size.w, bounds.size.h / 7));
+  s_text_testb = text_layer_create(GRect(0,45, bounds.size.w, bounds.size.h / 7));
   text_layer_set_text_alignment(s_text_testb, GTextAlignmentLeft);
   text_layer_set_background_color(s_text_testb, GColorClear);
   text_layer_set_text(s_text_testb, "CHRIS");
@@ -208,8 +218,8 @@ static void update_time() {
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
    update_time();
   
-  // Get weather update every 30 minutes
-  if(tick_time->tm_sec % 20 == 0) {
+  // Update every 15 seconds
+  if(tick_time->tm_sec % 15 == 0) {
     // Begin dictionary
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
@@ -292,11 +302,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     // Which key was received?
     switch(t->key) {
     case KEY_BIKENAME:
-      APP_LOG(APP_LOG_LEVEL_INFO, "My Lat Found found: %s",  t->value->cstring);
+      APP_LOG(APP_LOG_LEVEL_INFO, "Nearest loc found: %s",  t->value->cstring);
       snprintf(bikename_buffer, sizeof(bikename_buffer), "%s", t->value->cstring);
       break;
     case KEY_ANGLE:
-      APP_LOG(APP_LOG_LEVEL_INFO, "My Lng found: %d", (int)t->value->int32);
+      APP_LOG(APP_LOG_LEVEL_INFO, "Angle to loc: %d", (int)t->value->int32);
       snprintf(angle_buffer, sizeof(angle_buffer), "%d", (int)t->value->int32);
       angle = (int)t->value->int32;
       break;
@@ -310,8 +320,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     t = dict_read_next(iterator);
   }
   
+  if (strcmp (bikename_buffer,"ERROR") != 0) {
   text_layer_set_text(s_text_test, bikename_buffer);
   text_layer_set_text(s_heading_layer, angle_buffer);
+  text_layer_set_text(s_heading_layer, bikename_buffer);
+  } else {
+    text_layer_set_text(s_text_test, "Error connecting to internet");
+  }
 }
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
   APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
