@@ -10,7 +10,13 @@
     "longName": "CompassTest",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "images/refresh.png",
+                "name": "REFRESH",
+                "type": "png"
+            }
+        ]
     },
     "sdkVersion": "3",
     "shortName": "CompassTest",

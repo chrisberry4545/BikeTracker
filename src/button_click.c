@@ -13,10 +13,10 @@ static const GPathInfo MAIN_ARROW_POINTS = {
 };
 
 static Window *s_main_window;
-static BitmapLayer *s_bitmap_layer;
-static GBitmap *s_background_bitmap;
+static BitmapLayer *s_bitmap_layer, *s_refresh_bitmap_layer;
+static GBitmap *s_background_bitmap, *s_refresh_bitmap;
 static Layer *s_path_layer;
-static TextLayer *s_location_name, *s_text_layer_calib_state, *s_time_display, *s_refresh_hint;
+static TextLayer *s_location_name, *s_text_layer_calib_state, *s_time_display;
 
 static GPath *s_main_arrow;
 
@@ -48,7 +48,7 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
     // Show status at the top
     alert_bounds = GRect(0, 25, bounds.size.w, bounds.size.h / 7);
     text_layer_set_background_color(s_text_layer_calib_state, GColorClear);
-    text_layer_set_text_color(s_text_layer_calib_state, GColorBlack);
+    text_layer_set_text_color(s_text_layer_calib_state, GColorWhite);
     text_layer_set_font(s_text_layer_calib_state, fonts_get_system_font(FONT_KEY_GOTHIC_18));
     text_layer_set_text_alignment(s_text_layer_calib_state, GTextAlignmentLeft);
   }
@@ -75,11 +75,11 @@ static void compass_heading_handler(CompassHeadingData heading_data) {
 
 static void path_layer_update_callback(Layer *path, GContext *ctx) {
 #ifdef PBL_COLOR
-  graphics_context_set_fill_color(ctx, GColorPurple);
+  graphics_context_set_fill_color(ctx, GColorWhite);
 #endif
   gpath_draw_filled(ctx, s_main_arrow);       
 #ifndef PBL_COLOR
-  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_context_set_fill_color(ctx, GColorWhite);
 #endif                                  
 }
 
@@ -90,6 +90,7 @@ static void main_window_load(Window *window) {
   // Create the bitmap for the background and put it on the screen
   s_bitmap_layer = bitmap_layer_create(bounds);
   bitmap_layer_set_bitmap(s_bitmap_layer, s_background_bitmap);
+  bitmap_layer_set_background_color(s_bitmap_layer, GColorBlack);
   
   // Make needle background 'transparent' with GCompOpAnd
   bitmap_layer_set_compositing_mode(s_bitmap_layer, GCompOpAnd);
@@ -112,6 +113,9 @@ static void main_window_load(Window *window) {
   // Place text layers onto screen: one for the heading and one for calibration status
   s_location_name = text_layer_create(GRect(0, bounds.size.h * 3 / 4, bounds.size.w, bounds.size.h / 5));
   text_layer_set_text(s_location_name, "No Data");
+  text_layer_set_text_alignment(s_location_name, GTextAlignmentCenter);
+  text_layer_set_text_color(s_location_name, GColorWhite);
+  text_layer_set_background_color(s_location_name, GColorClear);
   layer_add_child(window_layer, text_layer_get_layer(s_location_name));
 
   s_text_layer_calib_state = text_layer_create(GRect(0, 50, bounds.size.w, bounds.size.h / 7));
@@ -120,28 +124,29 @@ static void main_window_load(Window *window) {
 
   layer_add_child(window_layer, text_layer_get_layer(s_text_layer_calib_state));
   
-  s_time_display = text_layer_create(GRect(50,0, bounds.size.w, bounds.size.h / 7));
-  text_layer_set_text_alignment(s_time_display, GTextAlignmentLeft);
+  s_time_display = text_layer_create(GRect(0,0, bounds.size.w, bounds.size.h / 7));
+  text_layer_set_text_alignment(s_time_display, GTextAlignmentCenter);
+  text_layer_set_text_color(s_time_display, GColorWhite);
   text_layer_set_background_color(s_time_display, GColorClear);
   text_layer_set_font(s_time_display, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   layer_add_child(window_layer, text_layer_get_layer(s_time_display));
   
-  s_refresh_hint = text_layer_create(GRect(95,10, bounds.size.w, bounds.size.h / 7));
-  text_layer_set_text_alignment(s_refresh_hint, GTextAlignmentLeft);
-  text_layer_set_background_color(s_refresh_hint, GColorClear);
-  text_layer_set_text(s_refresh_hint, "Refresh");
-  layer_add_child(window_layer, text_layer_get_layer(s_refresh_hint));
+  s_refresh_bitmap_layer = bitmap_layer_create(GRect(bounds.size.w - 16, 10, 16, 16));
+  s_refresh_bitmap = gbitmap_create_with_resource(RESOURCE_ID_REFRESH);
+  bitmap_layer_set_bitmap(s_refresh_bitmap_layer, s_refresh_bitmap);
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_refresh_bitmap_layer));
 }
 
 static void main_window_unload(Window *window) {
   text_layer_destroy(s_location_name);
   text_layer_destroy(s_text_layer_calib_state);
   text_layer_destroy(s_time_display);
-  text_layer_destroy(s_refresh_hint);
   gpath_destroy(s_main_arrow);
   layer_destroy(s_path_layer);
   gbitmap_destroy(s_background_bitmap);
+  gbitmap_destroy(s_refresh_bitmap);
   bitmap_layer_destroy(s_bitmap_layer);
+  bitmap_layer_destroy(s_refresh_bitmap_layer);
 }
 
 static void update_time() {
