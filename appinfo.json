@@ -7,10 +7,16 @@
         "location"
     ],
     "companyName": "chrisberry4545@googlemail.com",
-    "longName": "CompassTest",
+    "longName": "London Bike Tracker",
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/londonbike.png",
+                "menuIcon": true,
+                "name": "londonbike",
+                "type": "png"
+            },
             {
                 "file": "images/refresh.png",
                 "name": "REFRESH",
@@ -19,7 +25,7 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "CompassTest",
+    "shortName": "London Bike Tracker",
     "targetPlatforms": [
         "aplite",
         "basalt"
