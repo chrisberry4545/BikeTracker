@@ -16,7 +16,7 @@ function getMyLocation(callback) {
     navigator.geolocation.getCurrentPosition(success, error, options);
 }
 function constructUrl(lat, lng) {
-    return 'http://chrisbdev.com/api/location/GetAngleToNearestPoint?lat=' + lat + '&lng=' + lng + '&facingAngle=0';
+    return 'http://biketracker.chrisbdev.com/api/location/GetAngleToNearestPoint?lat=' + lat + '&lng=' + lng + '&facingAngle=0';
 }
 
 var xhrRequest = function (url, type, callback) {

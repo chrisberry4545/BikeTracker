@@ -27,7 +27,6 @@
     "sdkVersion": "3",
     "shortName": "London Bike Tracker",
     "targetPlatforms": [
-        "aplite",
         "basalt"
     ],
     "uuid": "59c6e1fc-1276-4e47-a9c6-0cd9074f553c",
